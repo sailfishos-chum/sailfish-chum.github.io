@@ -206,6 +206,40 @@ class PackageApplicationType(StrEnum):
     firmware = enum.auto()
 
 
+CHANGELOG_LINE_REGEX = re.compile(r"^[ \t]*-\s*(?:\[(?P<section>[^]]+)])?\s*(?P<log>\w.*)$")
+@dataclass
+class ChangelogEntryLine:
+    section: str
+    text: str
+
+    @staticmethod
+    def parse_from_text(text: str) -> List["ChangelogEntryLine"]:
+
+        result: List["ChangelogEntryLine"] = []
+
+        for line in text.splitlines():
+            match = CHANGELOG_LINE_REGEX.match(line)
+            if match:
+                category = match.group("section")
+                if category is None:
+                    category = ""
+                log = match.group("log").strip()
+
+                # Skip empty log lines
+                if log == "":
+                    continue
+                result.append(ChangelogEntryLine(category, log))
+            elif len(result) == 0:
+                # If the first line fails to parse, it should simply fall back
+                return []
+            else:
+                stripped_line = line.strip()
+                if stripped_line != "":
+                    result[-1].text += " " + stripped_line
+
+        # Sort entries without a category before the others
+        return list([e for e in result if e.section == ""]) + list([e for e in result if e.section != ""])
+
 AUTHOR_VERSION_REGEX = re.compile(r"(?P<author>.*) *<(?P<email>.*)>[ -]*(?P<version>.*)")
 @dataclass
 class ChangelogEntry:
@@ -214,6 +248,7 @@ class ChangelogEntry:
     email: str
     version: str
     text: str
+    lines: List[ChangelogEntryLine]
 
     @staticmethod
     def from_node(pkg_name: str, dom_element) -> List:
@@ -231,7 +266,8 @@ class ChangelogEntry:
                     author = author_and_version
                     email = ""
                     version = ""
-                entries.append(ChangelogEntry(timestamp, author, email, version, text))
+                entries.append(ChangelogEntry(timestamp, author, email, version, text,
+                                              ChangelogEntryLine.parse_from_text(text)))
             except Exception as e:
                 logger.warning(f"Parsing failed for changelog entry from {pkg_name}", exc_info=e)
 

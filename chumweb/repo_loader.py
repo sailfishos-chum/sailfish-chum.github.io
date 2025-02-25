@@ -103,7 +103,10 @@ def load_repo(obs_url: str, obs_project: str, obs_auth: Tuple[str, str], repo_ur
 
     data_paths: List[Dict[str, Path]]
     if "data_path" in kwargs:
-        data_paths = [{'primary': Path(kwargs["data_path"], f"{repo}.xml.gz")} for repo in repos]
+        data_paths = [{
+                'primary': Path(kwargs["data_path"], f"{repo}-primary.xml.gz"),
+                'other': Path(kwargs["data_path"], f"{repo}-other.xml.gz")
+            } for repo in repos]
     else:
         begin_step("Downloading repos")
         data_paths = [save_repo_data(urljoin(repo_url, repo_name + "/"), repo_name, out_dir) for repo_name in repos]

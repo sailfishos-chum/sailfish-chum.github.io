@@ -1,0 +1,46 @@
+{% macro changelog_entry_grouped(entry, level=3) -%}
+    <h{{level}}> {{ entry.version }} ({{ entry.timestamp | format_date }}) </h{{level}}>
+    {%if entry.lines|length > 0 %}
+        <ul>
+        {% for line in entry.lines %}
+            {% if loop.index == 1 and line.section != "" or loop.index > 1 and line.section.casefold() != loop.previtem.section.casefold() %}
+            </ul>
+            <h{{ level + 1 }}>{{ line.section }} </h{{ level + 1 }}>
+            <ul>
+            {% endif %}
+            <li>{{ line.text }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+    <pre>{{entry.text}}</pre>
+    {% endif %}
+{%- endmacro %}
+
+{% macro changelog_entry(entry, level=3) -%}
+    <h{{level}}> {{ entry.version }} ({{ entry.timestamp | format_date }}) </h{{level}}>
+    {%if entry.lines|length > 0 %}
+        <ul>
+        {% for line in entry.lines %}
+            {% if line.section == "" %}
+                <li> {{ line.text }}</li>
+            {% else %}
+                <li> <strong>[{{ line.section }}]</strong> {{ line.text }} </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    {% else %}
+    <pre>{{entry.text}}</pre>
+    {% endif %}
+{%- endmacro %}
+
+{% macro changelog(pkg) -%}
+    {{ changelog_entry(pkg.changelog_entries[0]) }}
+    {% if pkg.changelog_entries|length > 1 %}
+        <details>
+            <summary><h3 style="display: inline-block; margin: 0.5em 0;">Older changelogs</h3></summary>
+            {% for entry in pkg.changelog_entries[1:] %}
+                {{ changelog_entry(entry, 4) }}
+            {% endfor %}
+        </details>
+    {% endif %}
+{%- endmacro %}

@@ -1,5 +1,6 @@
 {% extends "layouts/base.html" %}
 {% import "parts/package-item.html" as package_item %}
+{% import "parts/changelog.html" as changelog %}
 
 {% block title %} {{ pkg.title }} — {{ super() }}{% endblock %}
 
@@ -66,17 +67,7 @@
         {% if pkg.changelog_entries|length > 0 %}
             <section>
                 <header><h2>Changelog</h2></header>
-                <h3>{{ pkg.changelog_entries[0].version }} ({{ pkg.changelog_entries[0].timestamp | format_date }})</h3>
-                <pre>{{ pkg.changelog_entries[0].text }}</pre>
-                {% if pkg.changelog_entries|length > 1 %}
-                    <details>
-                        <summary><h3 style="display: inline-block; margin: 0.5em 0;">Older changelogs</h3></summary>
-                        {% for entry in pkg.changelog_entries[1:] %}
-                            <h4>{{ entry.version }} ({{ entry.timestamp | format_date }})</h4>
-                            <pre>{{ entry.text }}</pre>
-                        {% endfor %}
-                    </details>
-                {% endif %}
+                {{ changelog.changelog(pkg) }}
             </section>
 
         {% endif %}
